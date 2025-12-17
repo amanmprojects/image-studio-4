@@ -12,12 +12,12 @@ type GeneratedImage = {
   createdAt: string;
 };
 
-type ImageSize = "1024x1024" | "1024x1792" | "1792x1024";
+type ImageSize = "1024x1024" | "1024x1440" | "1440x1024";
 
 const SIZE_OPTIONS: { value: ImageSize; label: string }[] = [
   { value: "1024x1024", label: "Square (1024×1024)" },
-  { value: "1024x1792", label: "Portrait (1024×1792)" },
-  { value: "1792x1024", label: "Landscape (1792×1024)" },
+  { value: "1024x1440", label: "Portrait (1024×1440)" },
+  { value: "1440x1024", label: "Landscape (1440×1024)" },
 ];
 
 export default function StudioPage() {

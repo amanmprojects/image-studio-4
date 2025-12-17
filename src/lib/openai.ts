@@ -5,7 +5,8 @@ export const openai = new OpenAI({
   baseURL: process.env.AZURE_OPENAI_ENDPOINT,
 });
 
-export type ImageSize = "1024x1024" | "1024x1792" | "1792x1024";
+// FLUX-1.1-pro max dimension is 1440px
+export type ImageSize = "1024x1024" | "1024x1440" | "1440x1024";
 
 export async function generateImage(
   prompt: string,
