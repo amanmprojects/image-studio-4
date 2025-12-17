@@ -1,4 +1,4 @@
-import { workos, COOKIE_NAME } from "@/lib/workos";
+import { getWorkOS, COOKIE_NAME } from "@/lib/workos";
 import { NextRequest, NextResponse } from "next/server";
 
 export const runtime = "nodejs";
@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const { sealedSession } = await workos.userManagement.authenticateWithCode({
+    const { sealedSession } = await getWorkOS().userManagement.authenticateWithCode({
       code,
       clientId: process.env.WORKOS_CLIENT_ID!,
       session: {

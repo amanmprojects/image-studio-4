@@ -1,11 +1,20 @@
 import { WorkOS } from "@workos-inc/node";
 import { cookies } from "next/headers";
 
-const workos = new WorkOS(process.env.WORKOS_API_KEY!, {
-  clientId: process.env.WORKOS_CLIENT_ID!,
-});
+// Lazy initialization to ensure env vars are available at runtime
+let _workos: WorkOS | null = null;
 
-export { workos };
+export function getWorkOS(): WorkOS {
+  if (!_workos) {
+    if (!process.env.WORKOS_API_KEY) {
+      throw new Error("WORKOS_API_KEY environment variable is not set");
+    }
+    _workos = new WorkOS(process.env.WORKOS_API_KEY, {
+      clientId: process.env.WORKOS_CLIENT_ID!,
+    });
+  }
+  return _workos;
+}
 
 export const COOKIE_NAME = "wos-session";
 
@@ -17,18 +26,24 @@ export async function getSession() {
     return { user: null, session: null };
   }
 
-  const session = workos.userManagement.loadSealedSession({
-    sessionData,
-    cookiePassword: process.env.WORKOS_COOKIE_PASSWORD!,
-  });
+  try {
+    const workos = getWorkOS();
+    const session = workos.userManagement.loadSealedSession({
+      sessionData,
+      cookiePassword: process.env.WORKOS_COOKIE_PASSWORD!,
+    });
 
-  const authResult = await session.authenticate();
+    const authResult = await session.authenticate();
 
-  if (!authResult.authenticated) {
-    return { user: null, session };
+    if (!authResult.authenticated) {
+      return { user: null, session };
+    }
+
+    return { user: authResult.user, session };
+  } catch (error) {
+    console.error("Failed to get session:", error);
+    return { user: null, session: null };
   }
-
-  return { user: authResult.user, session };
 }
 
 export async function requireAuth() {

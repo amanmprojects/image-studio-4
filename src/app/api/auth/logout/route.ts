@@ -1,4 +1,4 @@
-import { workos, COOKIE_NAME, getSession } from "@/lib/workos";
+import { COOKIE_NAME, getSession } from "@/lib/workos";
 import { NextRequest, NextResponse } from "next/server";
 
 export const runtime = "nodejs";
