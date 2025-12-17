@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAuth } from "@/lib/workos";
 import { generateImage } from "@/lib/ai";
-import { IMAGE_MODELS, IMAGE_SIZES, ImageModel, ImageSize } from "@/lib/models";
-import { uploadImage, generateImageKey, getPresignedUrl } from "@/lib/s3";
+import { IMAGE_MODELS, IMAGE_SIZES, ImageModel, ImageSize, getModelConfig } from "@/lib/models";
+import { uploadImage, generateImageKey, getPresignedUrl, URL_EXPIRY_SECONDS } from "@/lib/s3";
 import { db, images, users } from "@/lib/db";
 import { eq } from "drizzle-orm";
 
@@ -48,7 +48,15 @@ export async function POST(request: NextRequest) {
     const s3Key = generateImageKey(user.id, imageId);
     await uploadImage(s3Key, imageBuffer);
 
-    // Save to database
+    // Get presigned URL and cache expiry
+    const url = await getPresignedUrl(s3Key);
+    const cachedUrlExpiry = new Date(Date.now() + URL_EXPIRY_SECONDS * 1000);
+
+    // Get provider from model config
+    const modelConfig = getModelConfig(model);
+    const provider = modelConfig?.provider ?? "azure-openai";
+
+    // Save to database with cached URL
     const [newImage] = await db
       .insert(images)
       .values({
@@ -58,17 +66,20 @@ export async function POST(request: NextRequest) {
         s3Key,
         width,
         height,
+        model,
+        provider,
+        cachedUrl: url,
+        cachedUrlExpiry,
       })
       .returning();
-
-    // Get presigned URL for viewing
-    const url = await getPresignedUrl(s3Key);
 
     return NextResponse.json({
       id: newImage.id,
       prompt: newImage.prompt,
       width: newImage.width,
       height: newImage.height,
+      model: newImage.model,
+      provider: newImage.provider,
       url,
       createdAt: newImage.createdAt,
     });

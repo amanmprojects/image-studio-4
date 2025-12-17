@@ -31,9 +31,12 @@ export async function uploadImage(
   return key;
 }
 
+// 23 hours - gives buffer before 24h expiry
+export const URL_EXPIRY_SECONDS = 23 * 60 * 60;
+
 export async function getPresignedUrl(
   key: string,
-  expiresIn: number = 3600
+  expiresIn: number = URL_EXPIRY_SECONDS
 ): Promise<string> {
   const command = new GetObjectCommand({
     Bucket: BUCKET_NAME,
