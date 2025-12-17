@@ -46,9 +46,9 @@ Required variables:
 | `WORKOS_COOKIE_PASSWORD` | 32+ character password for session encryption |
 | `OPENAI_API_KEY` | OpenAI API key |
 | `DATABASE_URL` | PostgreSQL connection string |
-| `AWS_REGION` | AWS region (e.g., `us-east-1`) |
-| `AWS_ACCESS_KEY_ID` | AWS access key |
-| `AWS_SECRET_ACCESS_KEY` | AWS secret key |
+| `AAWWSS_REGION` | AWS region (e.g., `us-east-1`) |
+| `AAWWSS_ACCESS_KEY_ID` | AWS access key |
+| `AAWWSS_SECRET_ACCESS_KEY` | AWS secret key |
 | `S3_BUCKET_NAME` | S3 bucket name for image storage |
 
 ### 3. Configure WorkOS AuthKit

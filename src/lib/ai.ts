@@ -13,17 +13,17 @@ const openai = createOpenAI({
 });
 
 const bedrock = createAmazonBedrock({
-  region: process.env.AWS_BEDROCK_REGION ?? "us-east-1",
-  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  region: process.env.AAWWSS_BEDROCK_REGION ?? "us-east-1",
+  accessKeyId: process.env.AAWWSS_ACCESS_KEY_ID,
+  secretAccessKey: process.env.AAWWSS_SECRET_ACCESS_KEY,
 });
 
 // Direct Bedrock client for operations not supported by AI SDK
 const bedrockClient = new BedrockRuntimeClient({
-  region: process.env.AWS_BEDROCK_REGION ?? "us-east-1",
+  region: process.env.AAWWSS_BEDROCK_REGION ?? "us-east-1",
   credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+    accessKeyId: process.env.AAWWSS_ACCESS_KEY_ID!,
+    secretAccessKey: process.env.AAWWSS_SECRET_ACCESS_KEY!,
   },
 });
 

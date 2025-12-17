@@ -47,15 +47,15 @@ function ModeToggle({
   disabled?: boolean;
 }) {
   return (
-    <div className="inline-flex rounded-full bg-emerald-600 p-1">
+    <div className="inline-flex rounded-full bg-zinc-800/50 backdrop-blur-sm border border-zinc-700/50 p-1">
       <button
         type="button"
         onClick={() => onChange("generate")}
         disabled={disabled}
         className={`px-6 py-2 rounded-full text-sm font-medium transition-all ${
           mode === "generate"
-            ? "bg-white text-emerald-600 shadow-sm"
-            : "text-white/90 hover:text-white"
+            ? "bg-emerald-500/90 text-white shadow-sm backdrop-blur-sm"
+            : "text-zinc-400 hover:text-zinc-200"
         } ${disabled ? "opacity-50 cursor-not-allowed" : ""}`}
       >
         Generate
@@ -66,8 +66,8 @@ function ModeToggle({
         disabled={disabled}
         className={`px-6 py-2 rounded-full text-sm font-medium transition-all ${
           mode === "edit"
-            ? "bg-white text-emerald-600 shadow-sm"
-            : "text-white/90 hover:text-white"
+            ? "bg-emerald-500/90 text-white shadow-sm backdrop-blur-sm"
+            : "text-zinc-400 hover:text-zinc-200"
         } ${disabled ? "opacity-50 cursor-not-allowed" : ""}`}
       >
         Edit
@@ -264,6 +264,7 @@ export default function StudioPage() {
           <h1 className="text-xl font-semibold tracking-tight">
             <span className="text-emerald-400">Image</span> Studio
           </h1>
+          <ModeToggle mode={mode} onChange={setMode} disabled={isProcessing} />
           <a
             href="/api/auth/logout"
             className="text-sm text-zinc-400 hover:text-zinc-200 transition-colors"
@@ -274,11 +275,6 @@ export default function StudioPage() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 py-8">
-        {/* Mode Toggle */}
-        <div className="flex justify-center mb-8">
-          <ModeToggle mode={mode} onChange={setMode} disabled={isProcessing} />
-        </div>
-
         {/* Forms Section */}
         <section className="mb-12">
           {mode === "generate" ? (
