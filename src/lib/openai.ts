@@ -1,6 +1,7 @@
-import OpenAI from "openai";
+import { createOpenAI } from "@ai-sdk/openai";
+import { experimental_generateImage as generateImageAI } from "ai";
 
-export const openai = new OpenAI({
+export const openai = createOpenAI({
   apiKey: process.env.AZURE_OPENAI_API_KEY,
   baseURL: process.env.AZURE_OPENAI_ENDPOINT,
 });
@@ -18,31 +19,14 @@ export async function generateImage(
   size: ImageSize = "1024x1024",
   model: ImageModel = "FLUX-1.1-pro"
 ): Promise<{ base64: string; width: number; height: number }> {
-  // FLUX models on Azure return b64_json by default
-  const response = await openai.images.generate({
-    model,
+  const { image } = await generateImageAI({
+    model: openai.image(model),
     prompt,
-    n: 1,
     size,
+    n: 1,
   });
-
-  const imageData = response.data?.[0];
-  
-  // Handle both b64_json and url responses
-  let base64: string;
-  if (imageData?.b64_json) {
-    base64 = imageData.b64_json;
-  } else if (imageData?.url) {
-    // If we get a URL, fetch and convert to base64
-    const imgResponse = await fetch(imageData.url);
-    const buffer = await imgResponse.arrayBuffer();
-    base64 = Buffer.from(buffer).toString("base64");
-  } else {
-    throw new Error("No image data returned from the model");
-  }
 
   const [width, height] = size.split("x").map(Number);
 
-  return { base64, width, height };
+  return { base64: image.base64, width, height };
 }
-
