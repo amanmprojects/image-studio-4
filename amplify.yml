@@ -13,9 +13,19 @@ frontend:
       commands:
         - export BUN_INSTALL="$HOME/.bun"
         - export PATH="$BUN_INSTALL/bin:$PATH"
-        # Debug - verify env vars are present (won't print values)
-        - echo "WORKOS_API_KEY is $(if [ -n \"$WORKOS_API_KEY\" ]; then echo 'SET'; else echo 'NOT SET'; fi)"
-        - echo "DATABASE_URL is $(if [ -n \"$DATABASE_URL\" ]; then echo 'SET'; else echo 'NOT SET'; fi)"
+        # Create .env.production file for runtime (Amplify SSR workaround)
+        - |
+          echo "WORKOS_API_KEY=$WORKOS_API_KEY" >> .env.production
+          echo "WORKOS_CLIENT_ID=$WORKOS_CLIENT_ID" >> .env.production
+          echo "WORKOS_COOKIE_PASSWORD=$WORKOS_COOKIE_PASSWORD" >> .env.production
+          echo "DATABASE_URL=$DATABASE_URL" >> .env.production
+          echo "AAWWSS_ACCESS_KEY_ID=$AAWWSS_ACCESS_KEY_ID" >> .env.production
+          echo "AAWWSS_SECRET_ACCESS_KEY=$AAWWSS_SECRET_ACCESS_KEY" >> .env.production
+          echo "AAWWSS_REGION=$AAWWSS_REGION" >> .env.production
+          echo "S3_BUCKET_NAME=$S3_BUCKET_NAME" >> .env.production
+          echo "AZURE_OPENAI_API_KEY=$AZURE_OPENAI_API_KEY" >> .env.production
+          echo "AZURE_OPENAI_ENDPOINT=$AZURE_OPENAI_ENDPOINT" >> .env.production
+          echo "NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL" >> .env.production
         - bun run build
   artifacts:
     baseDirectory: .next
