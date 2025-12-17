@@ -1,0 +1,48 @@
+import { createOpenAI } from "@ai-sdk/openai";
+import { createAmazonBedrock } from "@ai-sdk/amazon-bedrock";
+import { experimental_generateImage as generateImageAI } from "ai";
+import { getModelConfig, ImageModel, ImageSize } from "./models";
+
+const openai = createOpenAI({
+  apiKey: process.env.AZURE_OPENAI_API_KEY,
+  baseURL: process.env.AZURE_OPENAI_ENDPOINT,
+});
+
+const bedrock = createAmazonBedrock({
+  region: process.env.AWS_BEDROCK_REGION ?? "us-west-2",
+  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+});
+
+function getImageModel(modelId: ImageModel) {
+  const config = getModelConfig(modelId);
+  if (!config) {
+    throw new Error(`Unknown model: ${modelId}`);
+  }
+
+  switch (config.provider) {
+    case "azure-openai":
+      return openai.image(modelId);
+    case "bedrock":
+      return bedrock.image(modelId);
+    default:
+      throw new Error(`Unknown provider: ${config.provider}`);
+  }
+}
+
+export async function generateImage(
+  prompt: string,
+  size: ImageSize,
+  model: ImageModel
+): Promise<{ base64: string; width: number; height: number }> {
+  const { image } = await generateImageAI({
+    model: getImageModel(model),
+    prompt,
+    size,
+    n: 1,
+  });
+
+  const [width, height] = size.split("x").map(Number);
+
+  return { base64: image.base64, width, height };
+}
