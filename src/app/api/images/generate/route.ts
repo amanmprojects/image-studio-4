@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAuth } from "@/lib/workos";
-import { generateImage, ImageSize } from "@/lib/openai";
+import { generateImage, ImageSize, ImageModel } from "@/lib/openai";
 import { uploadImage, generateImageKey, getPresignedUrl } from "@/lib/s3";
 import { db, images, users } from "@/lib/db";
 import { eq } from "drizzle-orm";
@@ -11,6 +11,7 @@ export const runtime = "nodejs";
 const generateSchema = z.object({
   prompt: z.string().min(1).max(4000),
   size: z.enum(["1024x1024", "1024x1440", "1440x1024"]).default("1024x1024"),
+  model: z.enum(["FLUX-1.1-pro"]).default("FLUX-1.1-pro"),
 });
 
 export async function POST(request: NextRequest) {
@@ -18,7 +19,7 @@ export async function POST(request: NextRequest) {
     const { user } = await requireAuth();
 
     const body = await request.json();
-    const { prompt, size } = generateSchema.parse(body);
+    const { prompt, size, model } = generateSchema.parse(body);
 
     // Ensure user exists in DB
     const existingUser = await db.query.users.findFirst({
@@ -34,8 +35,8 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Generate image with OpenAI
-    const { base64, width, height } = await generateImage(prompt, size as ImageSize);
+    // Generate image with selected model
+    const { base64, width, height } = await generateImage(prompt, size as ImageSize, model as ImageModel);
 
     // Upload to S3
     const imageBuffer = Buffer.from(base64, "base64");
@@ -81,8 +82,73 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // Handle OpenAI/Azure API errors
+    if (error && typeof error === "object" && "status" in error) {
+      const apiError = error as { status: number; error?: { message?: string }; message?: string };
+      
+      // Content moderation rejection
+      if (apiError.status === 400) {
+        const message = apiError.error?.message || apiError.message || "";
+        if (message.toLowerCase().includes("violence")) {
+          return NextResponse.json(
+            { error: "Content rejected: The generated image was flagged for violence. Please try a different prompt." },
+            { status: 400 }
+          );
+        }
+        if (message.toLowerCase().includes("sexual") || message.toLowerCase().includes("nsfw")) {
+          return NextResponse.json(
+            { error: "Content rejected: The generated image was flagged for inappropriate content. Please try a different prompt." },
+            { status: 400 }
+          );
+        }
+        if (message.toLowerCase().includes("content")) {
+          return NextResponse.json(
+            { error: `Content rejected: ${message}` },
+            { status: 400 }
+          );
+        }
+        return NextResponse.json(
+          { error: message || "Bad request to image generation API" },
+          { status: 400 }
+        );
+      }
+
+      // Model not found
+      if (apiError.status === 404) {
+        return NextResponse.json(
+          { error: "Model not found: The selected model is not available. Please try a different model." },
+          { status: 404 }
+        );
+      }
+
+      // Rate limiting
+      if (apiError.status === 429) {
+        return NextResponse.json(
+          { error: "Rate limited: Too many requests. Please wait a moment and try again." },
+          { status: 429 }
+        );
+      }
+
+      // Invalid size or parameters
+      if (apiError.status === 422) {
+        const message = apiError.error?.message || apiError.message || "";
+        return NextResponse.json(
+          { error: `Invalid parameters: ${message}` },
+          { status: 422 }
+        );
+      }
+
+      // Server error
+      if (apiError.status >= 500) {
+        return NextResponse.json(
+          { error: "The image generation service is temporarily unavailable. Please try again later." },
+          { status: 503 }
+        );
+      }
+    }
+
     return NextResponse.json(
-      { error: "Failed to generate image" },
+      { error: "Failed to generate image. Please try again." },
       { status: 500 }
     );
   }
