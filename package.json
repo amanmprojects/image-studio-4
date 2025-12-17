@@ -1,0 +1,40 @@
+{
+  "name": "image-studio-4",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.953.0",
+    "@aws-sdk/s3-request-presigner": "^3.953.0",
+    "@workos-inc/node": "^7.77.0",
+    "drizzle-orm": "^0.45.1",
+    "next": "14.2.0",
+    "openai": "^6.14.0",
+    "pg": "^8.16.3",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "zod": "^4.2.1"
+  },
+  "devDependencies": {
+    "@types/node": "20.11.30",
+    "@types/pg": "^8.16.0",
+    "@types/react": "18.2.66",
+    "@types/react-dom": "18.2.22",
+    "autoprefixer": "10.4.17",
+    "drizzle-kit": "^0.31.8",
+    "eslint": "8.57.0",
+    "eslint-config-next": "14.2.0",
+    "postcss": "8.4.35",
+    "tailwindcss": "3.4.1",
+    "typescript": "5.4.2"
+  }
+}
