@@ -231,7 +231,7 @@ export default function StudioPage() {
     document.body.removeChild(link);
   }
 
-  function useAsSource(img: GeneratedImage) {
+  function handleUseAsSource(img: GeneratedImage) {
     // Fetch through our API to avoid CORS issues with S3
     fetch(`/api/images/${img.id}/download`)
       .then((res) => {
@@ -524,7 +524,7 @@ export default function StudioPage() {
                       </button>
                       {VARIATION_MODELS.length > 0 && (
                         <button
-                          onClick={() => useAsSource(img)}
+                          onClick={() => handleUseAsSource(img)}
                           className="bg-emerald-500/90 hover:bg-emerald-500 text-white px-3 py-2 rounded-lg font-medium text-sm flex items-center gap-1.5 transition-colors"
                         >
                           <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
