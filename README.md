@@ -1,14 +1,24 @@
 # Image Studio
 
-AI-powered image generation studio built with Next.js, OpenAI, WorkOS AuthKit, and AWS S3.
+AI-powered image generation and editing studio built with Next.js, Vercel AI SDK, WorkOS AuthKit, and AWS.
 
 ## Features
 
-- **AI Image Generation** – Generate images from text prompts using OpenAI's gpt-image-1 model
-- **Multiple Sizes** – Square (1024×1024), Portrait (1024×1792), Landscape (1792×1024)
+- **AI Image Generation** – Generate images from text prompts using multiple AI models
+- **Image Variations** – Create variations of existing images with adjustable similarity
+- **Multiple Providers** – Azure OpenAI (FLUX) and Amazon Bedrock (Titan, Nova Canvas)
+- **Multiple Sizes** – Square (1024×1024), Portrait (1024×1440), Landscape (1440×1024)
 - **Secure Auth** – WorkOS AuthKit for hosted sign-in (email/password, social, SSO)
-- **Cloud Storage** – Images stored in AWS S3 with presigned URLs
-- **Gallery** – View and manage your generated images
+- **Cloud Storage** – Images stored in AWS S3 with cached presigned URLs
+- **Gallery** – View, download, and create variations of your generated images
+
+## Supported Models
+
+| Model | Provider | Generation | Variation |
+|-------|----------|------------|-----------|
+| FLUX 1.1 Pro | Azure OpenAI | ✅ | ❌ |
+| Amazon Titan Image Generator v1 | AWS Bedrock | ✅ | ✅ |
+| Amazon Nova Canvas | AWS Bedrock | ✅ | ✅ |
 
 ## Tech Stack
 
@@ -16,7 +26,7 @@ AI-powered image generation studio built with Next.js, OpenAI, WorkOS AuthKit, a
 - **Framework**: Next.js 14 (App Router, TypeScript)
 - **Styling**: Tailwind CSS
 - **Auth**: WorkOS AuthKit
-- **AI**: OpenAI SDK
+- **AI**: Vercel AI SDK + AWS SDK for Bedrock
 - **Database**: PostgreSQL with Drizzle ORM
 - **Storage**: AWS S3
 
@@ -44,9 +54,11 @@ Required variables:
 | `WORKOS_API_KEY` | WorkOS API key from dashboard |
 | `WORKOS_CLIENT_ID` | WorkOS client ID |
 | `WORKOS_COOKIE_PASSWORD` | 32+ character password for session encryption |
-| `OPENAI_API_KEY` | OpenAI API key |
+| `AZURE_OPENAI_API_KEY` | Azure OpenAI API key |
+| `AZURE_OPENAI_ENDPOINT` | Azure OpenAI endpoint URL |
 | `DATABASE_URL` | PostgreSQL connection string |
-| `AAWWSS_REGION` | AWS region (e.g., `us-east-1`) |
+| `AAWWSS_REGION` | AWS region for S3 (e.g., `us-east-1`) |
+| `AAWWSS_BEDROCK_REGION` | AWS region for Bedrock (e.g., `us-east-1`) |
 | `AAWWSS_ACCESS_KEY_ID` | AWS access key |
 | `AAWWSS_SECRET_ACCESS_KEY` | AWS secret key |
 | `S3_BUCKET_NAME` | S3 bucket name for image storage |
@@ -76,9 +88,13 @@ bun run db:generate
 bun run db:migrate
 ```
 
-### 5. Configure S3 bucket
+### 5. Configure AWS
 
-Create an S3 bucket and ensure your IAM user has `PutObject` and `GetObject` permissions.
+**S3 Bucket**: Create an S3 bucket and ensure your IAM user has `PutObject` and `GetObject` permissions.
+
+**Bedrock**: Enable the following models in the [Bedrock Console](https://console.aws.amazon.com/bedrock/):
+- Amazon Titan Image Generator G1
+- Amazon Nova Canvas
 
 ## Development
 
@@ -113,7 +129,9 @@ src/
 │   │   │   └── logout/route.ts     # Signs out user
 │   │   └── images/
 │   │       ├── route.ts            # GET user's images
-│   │       └── generate/route.ts   # POST generate new image
+│   │       ├── generate/route.ts   # POST generate new image
+│   │       ├── edit/route.ts       # POST create image variation
+│   │       └── [id]/download/      # GET download image
 │   ├── studio/
 │   │   └── page.tsx                # Protected studio UI
 │   ├── layout.tsx
@@ -123,7 +141,12 @@ src/
     ├── db/
     │   ├── index.ts                # Drizzle client
     │   └── schema.ts               # DB schema
-    ├── openai.ts                   # OpenAI client
+    ├── ai.ts                       # AI SDK + Bedrock clients
+    ├── models.ts                   # Model configurations
     ├── s3.ts                       # S3 helpers
     └── workos.ts                   # WorkOS + session helpers
 ```
+
+## License
+
+MIT
