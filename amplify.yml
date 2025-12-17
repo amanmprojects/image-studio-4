@@ -13,6 +13,9 @@ frontend:
       commands:
         - export BUN_INSTALL="$HOME/.bun"
         - export PATH="$BUN_INSTALL/bin:$PATH"
+        # Debug - verify env vars are present (won't print values)
+        - echo "WORKOS_API_KEY is $(if [ -n \"$WORKOS_API_KEY\" ]; then echo 'SET'; else echo 'NOT SET'; fi)"
+        - echo "DATABASE_URL is $(if [ -n \"$DATABASE_URL\" ]; then echo 'SET'; else echo 'NOT SET'; fi)"
         - bun run build
   artifacts:
     baseDirectory: .next
