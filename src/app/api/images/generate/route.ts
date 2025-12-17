@@ -1,17 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAuth } from "@/lib/workos";
-import { generateImage, ImageSize, ImageModel } from "@/lib/openai";
+import { generateImage } from "@/lib/ai";
+import { IMAGE_MODELS, IMAGE_SIZES, ImageModel, ImageSize } from "@/lib/models";
 import { uploadImage, generateImageKey, getPresignedUrl } from "@/lib/s3";
 import { db, images, users } from "@/lib/db";
 import { eq } from "drizzle-orm";
 
 export const runtime = "nodejs";
 
+const modelIds = IMAGE_MODELS.map((m) => m.id) as [string, ...string[]];
+const sizeValues = IMAGE_SIZES.map((s) => s.value) as [string, ...string[]];
+
 const generateSchema = z.object({
   prompt: z.string().min(1).max(4000),
-  size: z.enum(["1024x1024", "1024x1440", "1440x1024"]).default("1024x1024"),
-  model: z.enum(["FLUX-1.1-pro"]).default("FLUX-1.1-pro"),
+  size: z.enum(sizeValues).default("1024x1024"),
+  model: z.enum(modelIds).default("FLUX-1.1-pro"),
 });
 
 export async function POST(request: NextRequest) {

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
+import { IMAGE_MODELS, IMAGE_SIZES, ImageModel, ImageSize } from "@/lib/models";
 
 type GeneratedImage = {
   id: string;
@@ -11,19 +12,6 @@ type GeneratedImage = {
   url: string;
   createdAt: string;
 };
-
-type ImageSize = "1024x1024" | "1024x1440" | "1440x1024";
-type ImageModel = "FLUX-1.1-pro";
-
-const SIZE_OPTIONS: { value: ImageSize; label: string }[] = [
-  { value: "1024x1024", label: "Square (1024×1024)" },
-  { value: "1024x1440", label: "Portrait (1024×1440)" },
-  { value: "1440x1024", label: "Landscape (1440×1024)" },
-];
-
-const MODEL_OPTIONS: { value: ImageModel; label: string }[] = [
-  { value: "FLUX-1.1-pro", label: "FLUX 1.1 Pro" },
-];
 
 function getAspectRatioClass(width: number, height: number): string {
   const ratio = width / height;
@@ -144,9 +132,9 @@ export default function StudioPage() {
                   className="bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-zinc-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
                   disabled={isGenerating}
                 >
-                  {MODEL_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
+                  {IMAGE_MODELS.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.label}
                     </option>
                   ))}
                 </select>
@@ -160,9 +148,9 @@ export default function StudioPage() {
                   className="bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-zinc-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
                   disabled={isGenerating}
                 >
-                  {SIZE_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
+                  {IMAGE_SIZES.map((s) => (
+                    <option key={s.value} value={s.value}>
+                      {s.label}
                     </option>
                   ))}
                 </select>
