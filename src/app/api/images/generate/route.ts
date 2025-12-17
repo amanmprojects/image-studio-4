@@ -10,7 +10,7 @@ export const runtime = "nodejs";
 
 const generateSchema = z.object({
   prompt: z.string().min(1).max(4000),
-  size: z.enum(["1024x1024", "1024x1792", "1792x1024"]).default("1024x1024"),
+  size: z.enum(["1024x1024", "1024x1440", "1440x1024"]).default("1024x1024"),
 });
 
 export async function POST(request: NextRequest) {

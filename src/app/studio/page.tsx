@@ -12,13 +12,20 @@ type GeneratedImage = {
   createdAt: string;
 };
 
-type ImageSize = "1024x1024" | "1024x1792" | "1792x1024";
+type ImageSize = "1024x1024" | "1024x1440" | "1440x1024";
 
 const SIZE_OPTIONS: { value: ImageSize; label: string }[] = [
   { value: "1024x1024", label: "Square (1024×1024)" },
-  { value: "1024x1792", label: "Portrait (1024×1792)" },
-  { value: "1792x1024", label: "Landscape (1792×1024)" },
+  { value: "1024x1440", label: "Portrait (1024×1440)" },
+  { value: "1440x1024", label: "Landscape (1440×1024)" },
 ];
+
+function getAspectRatioClass(width: number, height: number): string {
+  const ratio = width / height;
+  if (ratio > 1.2) return "aspect-[1440/1024]"; // Landscape
+  if (ratio < 0.8) return "aspect-[1024/1440]"; // Portrait
+  return "aspect-square"; // Square
+}
 
 export default function StudioPage() {
   const [prompt, setPrompt] = useState("");
@@ -78,6 +85,16 @@ export default function StudioPage() {
     } finally {
       setIsGenerating(false);
     }
+  }
+
+  function handleDownload(img: GeneratedImage) {
+    // Use the API endpoint to download (avoids CORS issues with S3)
+    const link = document.createElement("a");
+    link.href = `/api/images/${img.id}/download`;
+    link.download = `image-${img.id}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   }
 
   return (
@@ -210,13 +227,15 @@ export default function StudioPage() {
               <p>No images yet. Create your first one above!</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="columns-1 sm:columns-2 lg:columns-3 gap-6 space-y-6">
               {images.map((img) => (
                 <div
                   key={img.id}
-                  className="group bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden hover:border-zinc-700 transition-colors"
+                  className="group bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden hover:border-zinc-700 transition-colors break-inside-avoid"
                 >
-                  <div className="relative aspect-square bg-zinc-800">
+                  <div
+                    className={`relative ${getAspectRatioClass(img.width, img.height)} bg-zinc-800`}
+                  >
                     <Image
                       src={img.url}
                       alt={img.prompt}
@@ -224,15 +243,58 @@ export default function StudioPage() {
                       className="object-cover"
                       sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                     />
+                    {/* Download button overlay */}
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                      <button
+                        onClick={() => handleDownload(img)}
+                        className="bg-white/90 hover:bg-white text-zinc-900 px-4 py-2 rounded-lg font-medium text-sm flex items-center gap-2 transition-colors"
+                      >
+                        <svg
+                          className="h-4 w-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                          />
+                        </svg>
+                        Download
+                      </button>
+                    </div>
                   </div>
                   <div className="p-4">
                     <p className="text-sm text-zinc-300 line-clamp-2">
                       {img.prompt}
                     </p>
-                    <p className="text-xs text-zinc-500 mt-2">
-                      {img.width}×{img.height} •{" "}
-                      {new Date(img.createdAt).toLocaleDateString()}
-                    </p>
+                    <div className="flex items-center justify-between mt-2">
+                      <p className="text-xs text-zinc-500">
+                        {img.width}×{img.height} •{" "}
+                        {new Date(img.createdAt).toLocaleDateString()}
+                      </p>
+                      <button
+                        onClick={() => handleDownload(img)}
+                        className="text-xs text-zinc-400 hover:text-emerald-400 transition-colors flex items-center gap-1"
+                      >
+                        <svg
+                          className="h-3.5 w-3.5"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                          />
+                        </svg>
+                        Download
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -243,4 +305,3 @@ export default function StudioPage() {
     </div>
   );
 }
-
