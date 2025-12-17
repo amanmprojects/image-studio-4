@@ -13,11 +13,16 @@ type GeneratedImage = {
 };
 
 type ImageSize = "1024x1024" | "1024x1440" | "1440x1024";
+type ImageModel = "FLUX-1.1-pro";
 
 const SIZE_OPTIONS: { value: ImageSize; label: string }[] = [
   { value: "1024x1024", label: "Square (1024×1024)" },
   { value: "1024x1440", label: "Portrait (1024×1440)" },
   { value: "1440x1024", label: "Landscape (1440×1024)" },
+];
+
+const MODEL_OPTIONS: { value: ImageModel; label: string }[] = [
+  { value: "FLUX-1.1-pro", label: "FLUX 1.1 Pro" },
 ];
 
 function getAspectRatioClass(width: number, height: number): string {
@@ -30,6 +35,7 @@ function getAspectRatioClass(width: number, height: number): string {
 export default function StudioPage() {
   const [prompt, setPrompt] = useState("");
   const [size, setSize] = useState<ImageSize>("1024x1024");
+  const [model, setModel] = useState<ImageModel>("FLUX-1.1-pro");
   const [isGenerating, setIsGenerating] = useState(false);
   const [images, setImages] = useState<GeneratedImage[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -64,7 +70,7 @@ export default function StudioPage() {
       const res = await fetch("/api/images/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt, size }),
+        body: JSON.stringify({ prompt, size, model }),
       });
 
       if (res.status === 401) {
@@ -130,6 +136,22 @@ export default function StudioPage() {
             </div>
 
             <div className="flex flex-wrap items-center gap-4">
+              <div className="flex items-center gap-2">
+                <label className="text-sm text-zinc-400">Model:</label>
+                <select
+                  value={model}
+                  onChange={(e) => setModel(e.target.value as ImageModel)}
+                  className="bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-zinc-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+                  disabled={isGenerating}
+                >
+                  {MODEL_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
               <div className="flex items-center gap-2">
                 <label className="text-sm text-zinc-400">Size:</label>
                 <select
