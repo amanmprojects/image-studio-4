@@ -25,6 +25,13 @@ export const IMAGE_MODELS = [
     supportsGeneration: true,
     supportsVariation: true,
   },
+  {
+    id: "amazon.nova-canvas-v1:0",
+    label: "Amazon Nova Canvas",
+    provider: "bedrock",
+    supportsGeneration: true,
+    supportsVariation: true,
+  },
 ] as const satisfies readonly ImageModelConfig[];
 
 export type ImageModel = (typeof IMAGE_MODELS)[number]["id"];

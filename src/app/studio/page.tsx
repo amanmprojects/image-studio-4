@@ -232,11 +232,16 @@ export default function StudioPage() {
   }
 
   function useAsSource(img: GeneratedImage) {
-    // Fetch the image and convert to base64
-    fetch(img.url)
-      .then((res) => res.blob())
+    // Fetch through our API to avoid CORS issues with S3
+    fetch(`/api/images/${img.id}/download`)
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to fetch image");
+        return res.blob();
+      })
       .then((blob) => {
-        setSourceImagePreview(img.url);
+        // Create a local URL for preview
+        setSourceImagePreview(URL.createObjectURL(blob));
+        // Convert to base64 for the API
         const reader = new FileReader();
         reader.onload = () => {
           const base64 = (reader.result as string).split(",")[1];
