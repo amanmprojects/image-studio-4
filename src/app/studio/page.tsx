@@ -10,8 +10,15 @@ type GeneratedImage = {
   width: number;
   height: number;
   url: string;
+  model: string;
+  provider: string;
   createdAt: string;
 };
+
+function getModelLabel(modelId: string): string {
+  const model = IMAGE_MODELS.find((m) => m.id === modelId);
+  return model?.label ?? modelId;
+}
 
 function getAspectRatioClass(width: number, height: number): string {
   const ratio = width / height;
@@ -25,6 +32,7 @@ export default function StudioPage() {
   const [size, setSize] = useState<ImageSize>("1024x1024");
   const [model, setModel] = useState<ImageModel>("FLUX-1.1-pro");
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isLoadingImages, setIsLoadingImages] = useState(true);
   const [images, setImages] = useState<GeneratedImage[]>([]);
   const [error, setError] = useState<string | null>(null);
 
@@ -34,6 +42,7 @@ export default function StudioPage() {
 
   async function fetchImages() {
     try {
+      setIsLoadingImages(true);
       const res = await fetch("/api/images");
       if (res.status === 401) {
         window.location.href = "/api/auth/login";
@@ -44,6 +53,8 @@ export default function StudioPage() {
       setImages(data.images || []);
     } catch (err) {
       console.error("Error fetching images:", err);
+    } finally {
+      setIsLoadingImages(false);
     }
   }
 
@@ -219,7 +230,30 @@ export default function StudioPage() {
             Your Creations
           </h2>
 
-          {images.length === 0 ? (
+          {isLoadingImages ? (
+            <div className="text-center py-16 text-zinc-500">
+              <svg
+                className="animate-spin mx-auto h-8 w-8 mb-4"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                />
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                />
+              </svg>
+              <p>Loading your images...</p>
+            </div>
+          ) : images.length === 0 ? (
             <div className="text-center py-16 text-zinc-500">
               <svg
                 className="mx-auto h-12 w-12 mb-4 opacity-50"
@@ -280,14 +314,22 @@ export default function StudioPage() {
                     <p className="text-sm text-zinc-300 line-clamp-2">
                       {img.prompt}
                     </p>
-                    <div className="flex items-center justify-between mt-2">
-                      <p className="text-xs text-zinc-500">
-                        {img.width}×{img.height} •{" "}
+                    <div className="mt-3 flex flex-wrap items-center gap-2">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-zinc-800 text-zinc-300">
+                        {getModelLabel(img.model)}
+                      </span>
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-zinc-800/50 text-zinc-400">
+                        {img.provider}
+                      </span>
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-zinc-800/50 text-zinc-400">
+                        {img.width}×{img.height}
+                      </span>
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-zinc-800/50 text-zinc-400">
                         {new Date(img.createdAt).toLocaleDateString()}
-                      </p>
+                      </span>
                       <button
                         onClick={() => handleDownload(img)}
-                        className="text-xs text-zinc-400 hover:text-emerald-400 transition-colors flex items-center gap-1"
+                        className="ml-auto text-xs text-zinc-400 hover:text-emerald-400 transition-colors flex items-center gap-1"
                       >
                         <svg
                           className="h-3.5 w-3.5"
