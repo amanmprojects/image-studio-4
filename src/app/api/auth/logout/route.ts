@@ -1,13 +1,8 @@
 import { COOKIE_NAME, getSession } from "@/lib/workos";
 import { NextRequest, NextResponse } from "next/server";
+import { getBaseUrl } from "@/lib/api";
 
 export const runtime = "nodejs";
-
-function getBaseUrl(request: NextRequest): string {
-  const protocol = request.headers.get("x-forwarded-proto") || "https";
-  const host = request.headers.get("host") || request.nextUrl.host;
-  return `${protocol}://${host}`;
-}
 
 export async function GET(request: NextRequest) {
   const { session } = await getSession();

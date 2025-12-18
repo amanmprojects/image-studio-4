@@ -1,26 +1,43 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/workos";
 import { db, images } from "@/lib/db";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, isNull, and } from "drizzle-orm";
 import { getPresignedUrl, URL_EXPIRY_SECONDS } from "@/lib/s3";
+import { formatImageResponse } from "@/lib/api";
 
 export const runtime = "nodejs";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const { user } = await requireAuth();
+    
+    // Get folder filter from query params
+    const { searchParams } = new URL(request.url);
+    const folderId = searchParams.get("folderId");
+
+    // Build where clause based on folder filter
+    const whereClause = folderId === "root"
+      ? and(eq(images.userId, user.id), isNull(images.folderId))
+      : folderId
+        ? and(eq(images.userId, user.id), eq(images.folderId, folderId))
+        : eq(images.userId, user.id);
 
     const userImages = await db.query.images.findMany({
-      where: eq(images.userId, user.id),
+      where: whereClause,
       orderBy: [desc(images.createdAt)],
-      limit: 50,
+      limit: 100,
     });
 
     const now = new Date();
 
-    // Find images with expired or missing cached URLs
+    // Find images with expired or missing cached URLs (for full images)
     const expiredImages = userImages.filter(
       (img) => !img.cachedUrl || !img.cachedUrlExpiry || img.cachedUrlExpiry < now
+    );
+
+    // Find images with expired or missing thumbnail URLs
+    const expiredThumbnails = userImages.filter(
+      (img) => img.thumbnailS3Key && (!img.cachedThumbnailUrl || !img.cachedThumbnailUrlExpiry || img.cachedThumbnailUrlExpiry < now)
     );
 
     // Refresh expired URLs in parallel and update DB
@@ -52,18 +69,47 @@ export async function GET() {
       }
     }
 
-    const imagesWithUrls = userImages.map((img) => ({
-      id: img.id,
-      prompt: img.prompt,
-      width: img.width,
-      height: img.height,
-      model: img.model,
-      provider: img.provider,
-      url: img.cachedUrl!,
-      createdAt: img.createdAt,
-    }));
+    // Refresh expired thumbnail URLs
+    if (expiredThumbnails.length > 0) {
+      const thumbnailUpdates = await Promise.all(
+        expiredThumbnails.map(async (img) => {
+          const url = await getPresignedUrl(img.thumbnailS3Key!);
+          const expiry = new Date(Date.now() + URL_EXPIRY_SECONDS * 1000);
+          return { id: img.id, url, expiry };
+        })
+      );
 
-    return NextResponse.json({ images: imagesWithUrls });
+      // Update thumbnail URLs in DB
+      Promise.all(
+        thumbnailUpdates.map(({ id, url, expiry }) =>
+          db
+            .update(images)
+            .set({ cachedThumbnailUrl: url, cachedThumbnailUrlExpiry: expiry })
+            .where(eq(images.id, id))
+        )
+      ).catch((err) => console.error("Failed to update cached thumbnail URLs:", err));
+
+      // Merge fresh thumbnail URLs into results
+      const thumbnailMap = new Map(thumbnailUpdates.map(({ id, url }) => [id, url]));
+      for (const img of userImages) {
+        if (thumbnailMap.has(img.id)) {
+          img.cachedThumbnailUrl = thumbnailMap.get(img.id)!;
+        }
+      }
+    }
+
+    const imagesWithUrls = userImages.map((img) =>
+      formatImageResponse(img, img.cachedUrl!, img.cachedThumbnailUrl ?? undefined)
+    );
+
+    return NextResponse.json(
+      { images: imagesWithUrls },
+      {
+        headers: {
+          "Cache-Control": "private, max-age=60, stale-while-revalidate=300",
+        },
+      }
+    );
   } catch (error) {
     if (error instanceof Error && error.message === "Unauthorized") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

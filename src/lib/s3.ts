@@ -4,6 +4,7 @@ import {
   GetObjectCommand,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import sharp from "sharp";
 
 const s3Client = new S3Client({
   region: process.env.AAWWSS_REGION!,
@@ -47,5 +48,48 @@ export async function getPresignedUrl(
 
 export function generateImageKey(userId: string, imageId: string): string {
   return `users/${userId}/${imageId}.png`;
+}
+
+export function generateThumbnailKey(userId: string, imageId: string): string {
+  return `users/${userId}/thumbnails/${imageId}.webp`;
+}
+
+/**
+ * Generate a WebP thumbnail from the original image buffer.
+ * Resizes to 400px width while maintaining aspect ratio.
+ * Returns a much smaller file (~90% reduction typically).
+ */
+export async function generateThumbnail(imageBuffer: Buffer): Promise<Buffer> {
+  return sharp(imageBuffer)
+    .resize(400, null, {
+      fit: "inside",
+      withoutEnlargement: true,
+    })
+    .webp({ quality: 80 })
+    .toBuffer();
+}
+
+/**
+ * Upload both the original image and a thumbnail.
+ * Returns both S3 keys.
+ */
+export async function uploadImageWithThumbnail(
+  userId: string,
+  imageId: string,
+  imageBuffer: Buffer
+): Promise<{ imageKey: string; thumbnailKey: string }> {
+  const imageKey = generateImageKey(userId, imageId);
+  const thumbnailKey = generateThumbnailKey(userId, imageId);
+
+  // Generate thumbnail
+  const thumbnailBuffer = await generateThumbnail(imageBuffer);
+
+  // Upload both in parallel
+  await Promise.all([
+    uploadImage(imageKey, imageBuffer, "image/png"),
+    uploadImage(thumbnailKey, thumbnailBuffer, "image/webp"),
+  ]);
+
+  return { imageKey, thumbnailKey };
 }
 
