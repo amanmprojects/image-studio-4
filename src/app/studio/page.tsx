@@ -99,7 +99,6 @@ export default function StudioPage() {
   );
   const [sourceImage, setSourceImage] = useState<string | null>(null);
   const [sourceImagePreview, setSourceImagePreview] = useState<string | null>(null);
-  const [similarityStrength, setSimilarityStrength] = useState(0.7);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -197,7 +196,6 @@ export default function StudioPage() {
           sourceImage,
           prompt,
           model: editModel,
-          similarityStrength,
         }),
       });
 
@@ -223,17 +221,30 @@ export default function StudioPage() {
   }
 
   function handleDownload(img: GeneratedImage) {
-    const link = document.createElement("a");
-    link.href = `/api/images/${img.id}/download`;
-    link.download = `image-${img.id}.png`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    fetch(`/api/images/${img.id}/download`, { credentials: "include" })
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to download");
+        return res.blob();
+      })
+      .then((blob) => {
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `image-${img.id}.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      })
+      .catch((err) => {
+        console.error("Download failed:", err);
+        setError("Failed to download image");
+      });
   }
 
   function handleUseAsSource(img: GeneratedImage) {
     // Fetch through our API to avoid CORS issues with S3
-    fetch(`/api/images/${img.id}/download`)
+    fetch(`/api/images/${img.id}/download`, { credentials: "include" })
       .then((res) => {
         if (!res.ok) throw new Error("Failed to fetch image");
         return res.blob();
@@ -422,26 +433,6 @@ export default function StudioPage() {
                     </select>
                   </div>
 
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <label className="text-sm text-zinc-400">Similarity:</label>
-                      <span className="text-sm text-zinc-300">{Math.round(similarityStrength * 100)}%</span>
-                    </div>
-                    <input
-                      type="range"
-                      min="0.2"
-                      max="1"
-                      step="0.1"
-                      value={similarityStrength}
-                      onChange={(e) => setSimilarityStrength(parseFloat(e.target.value))}
-                      className="w-full accent-emerald-500"
-                      disabled={isProcessing}
-                    />
-                    <div className="flex justify-between text-xs text-zinc-500">
-                      <span>More creative</span>
-                      <span>More similar</span>
-                    </div>
-                  </div>
                 </div>
               </div>
 

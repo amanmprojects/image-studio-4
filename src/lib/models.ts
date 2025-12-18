@@ -1,6 +1,6 @@
 export type ImageSize = "1024x1024" | "1024x1440" | "1440x1024";
 
-export type Provider = "azure-openai" | "bedrock";
+export type Provider = "azure-openai" | "bedrock" | "google-vertex";
 
 export type ImageModelConfig = {
   id: string;
@@ -23,12 +23,19 @@ export const IMAGE_MODELS = [
     label: "Amazon Titan Image Generator v1",
     provider: "bedrock",
     supportsGeneration: true,
-    supportsVariation: true,
+    supportsVariation: false,
   },
   {
     id: "amazon.nova-canvas-v1:0",
     label: "Amazon Nova Canvas",
     provider: "bedrock",
+    supportsGeneration: true,
+    supportsVariation: false,
+  },
+  {
+    id: "gemini-2.0-flash-exp",
+    label: "Nano Banana 🍌",
+    provider: "google-vertex",
     supportsGeneration: true,
     supportsVariation: true,
   },

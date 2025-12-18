@@ -15,7 +15,6 @@ const editSchema = z.object({
   sourceImage: z.string().min(1), // base64 encoded image
   prompt: z.string().min(1).max(4000),
   model: z.enum(variationModelIds),
-  similarityStrength: z.number().min(0.2).max(1.0).default(0.7),
 });
 
 export async function POST(request: NextRequest) {
@@ -23,7 +22,7 @@ export async function POST(request: NextRequest) {
     const { user } = await requireAuth();
 
     const body = await request.json();
-    const { sourceImage, prompt, model, similarityStrength } = editSchema.parse(body);
+    const { sourceImage, prompt, model } = editSchema.parse(body);
 
     // Ensure user exists in DB
     const existingUser = await db.query.users.findFirst({
@@ -43,8 +42,7 @@ export async function POST(request: NextRequest) {
     const { base64, width, height } = await generateImageVariation(
       sourceImage,
       prompt,
-      model as ImageModel,
-      similarityStrength
+      model as ImageModel
     );
 
     // Upload to S3
@@ -59,7 +57,7 @@ export async function POST(request: NextRequest) {
 
     // Get provider from model config
     const modelConfig = getModelConfig(model);
-    const provider = modelConfig?.provider ?? "bedrock";
+    const provider = modelConfig?.provider ?? "google-vertex";
 
     // Save to database with cached URL
     const [newImage] = await db
@@ -115,4 +113,7 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+
+
 
