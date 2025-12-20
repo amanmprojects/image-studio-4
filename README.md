@@ -1,24 +1,27 @@
-# Image Studio
+# Image Studio 4
 
-AI-powered image generation and editing studio built with Next.js, Vercel AI SDK, WorkOS AuthKit, and AWS.
+An AI-powered image generation and organization studio built with Next.js, Google Vertex AI (Gemini), WorkOS AuthKit, and AWS.
 
 ## Features
 
-- **AI Image Generation** – Generate images from text prompts using multiple AI models
-- **Image Variations** – Create variations of existing images with adjustable similarity
-- **Multiple Providers** – Azure OpenAI (FLUX) and Amazon Bedrock (Titan, Nova Canvas)
-- **Multiple Sizes** – Square (1024×1024), Portrait (1024×1440), Landscape (1440×1024)
-- **Secure Auth** – WorkOS AuthKit for hosted sign-in (email/password, social, SSO)
-- **Cloud Storage** – Images stored in AWS S3 with cached presigned URLs
-- **Gallery** – View, download, and create variations of your generated images
+- **AI Image Generation** – Generate high-quality images from text prompts using Gemini 2.5 Flash and Gemini 3 Pro.
+- **Image Variations** – Create variations of existing images with adjustable similarity and custom prompts.
+- **Advanced Organization** – Organize your studio with a nestable folder system.
+- **Drag & Drop** – Seamlessly move images between folders using an intuitive drag-and-drop interface.
+- **Secure Auth** – WorkOS AuthKit for hosted sign-in (email/password, social, SSO).
+- **Cloud Storage** – Images stored in AWS S3 with cached presigned URLs for performance.
+- **Gallery & Management** – View, download, move, and manage your generated creations.
 
 ## Supported Models
 
-| Model | Provider | Generation | Variation |
-|-------|----------|------------|-----------|
-| FLUX 1.1 Pro | Azure OpenAI | ✅ | ❌ |
-| Amazon Titan Image Generator v1 | AWS Bedrock | ✅ | ✅ |
-| Amazon Nova Canvas | AWS Bedrock | ✅ | ✅ |
+| Model | Provider | Label | Generation | Variation |
+|-------|----------|-------|------------|-----------|
+| Gemini 2.5 Flash | Google Vertex | Nano Banana 🍌 | ✅ | ✅ |
+| Gemini 3 Pro | Google Vertex | Nano Banana Pro 🍌 | ✅ | ✅ |
+| FLUX 1.1 Pro | Azure OpenAI | Flux Pro | (Optional) | ❌ |
+| Amazon Titan v1 | AWS Bedrock | Titan G1 | (Optional) | ✅ |
+
+*Note: Google Vertex AI models are currently the primary generation engine.*
 
 ## Tech Stack
 
@@ -26,9 +29,10 @@ AI-powered image generation and editing studio built with Next.js, Vercel AI SDK
 - **Framework**: Next.js 14 (App Router, TypeScript)
 - **Styling**: Tailwind CSS
 - **Auth**: WorkOS AuthKit
-- **AI**: Vercel AI SDK + AWS SDK for Bedrock
+- **AI**: Google Generative AI SDK (Vertex AI) + Vercel AI SDK
 - **Database**: PostgreSQL with Drizzle ORM
 - **Storage**: AWS S3
+- **Organization**: @dnd-kit for drag-and-drop folder management
 
 ## Setup
 
@@ -40,13 +44,7 @@ bun install
 
 ### 2. Configure environment variables
 
-Copy `.env.example` to `.env` and fill in your values:
-
-```bash
-cp .env.example .env
-```
-
-Required variables:
+Create a `.env` file in the root and fill in your values (refer to `src/lib/models/providers.ts` for logic):
 
 | Variable | Description |
 |----------|-------------|
@@ -54,11 +52,11 @@ Required variables:
 | `WORKOS_API_KEY` | WorkOS API key from dashboard |
 | `WORKOS_CLIENT_ID` | WorkOS client ID |
 | `WORKOS_COOKIE_PASSWORD` | 32+ character password for session encryption |
-| `AZURE_OPENAI_API_KEY` | Azure OpenAI API key |
-| `AZURE_OPENAI_ENDPOINT` | Azure OpenAI endpoint URL |
+| `GOOGLE_API_KEY` | Google AI Studio API key (optional if using Vertex) |
+| `GOOGLE_SERVICE_ACCOUNT_KEY`| Base64 encoded JSON service account key for Vertex AI |
+| `GOOGLE_CLOUD_LOCATION` | Vertex AI location (e.g., `us-central1`) |
 | `DATABASE_URL` | PostgreSQL connection string |
 | `AAWWSS_REGION` | AWS region for S3 (e.g., `us-east-1`) |
-| `AAWWSS_BEDROCK_REGION` | AWS region for Bedrock (e.g., `us-east-1`) |
 | `AAWWSS_ACCESS_KEY_ID` | AWS access key |
 | `AAWWSS_SECRET_ACCESS_KEY` | AWS secret key |
 | `S3_BUCKET_NAME` | S3 bucket name for image storage |
@@ -90,11 +88,11 @@ bun run db:migrate
 
 ### 5. Configure AWS
 
-**S3 Bucket**: Create an S3 bucket and ensure your IAM user has `PutObject` and `GetObject` permissions.
+**S3 Bucket**: Create an S3 bucket and ensure your IAM user has `PutObject` and `GetObject` permissions. Ensure CORS is configured for your app domain if serving thumbnails directly.
 
-**Bedrock**: Enable the following models in the [Bedrock Console](https://console.aws.amazon.com/bedrock/):
-- Amazon Titan Image Generator G1
-- Amazon Nova Canvas
+### 6. Configure Google Vertex AI
+
+Ensure the Vertex AI API is enabled in your Google Cloud Project. If using a service account, grant it the "Vertex AI User" role.
 
 ## Development
 
@@ -123,28 +121,21 @@ Open [http://localhost:3000](http://localhost:3000).
 src/
 ├── app/
 │   ├── api/
-│   │   ├── auth/
-│   │   │   ├── login/route.ts      # Redirects to WorkOS
-│   │   │   ├── callback/route.ts   # Handles auth callback
-│   │   │   └── logout/route.ts     # Signs out user
-│   │   └── images/
-│   │       ├── route.ts            # GET user's images
-│   │       ├── generate/route.ts   # POST generate new image
-│   │       ├── edit/route.ts       # POST create image variation
-│   │       └── [id]/download/      # GET download image
-│   ├── studio/
-│   │   └── page.tsx                # Protected studio UI
+│   │   ├── auth/          # WorkOS Auth routes
+│   │   ├── folders/       # Folder CRUD operations
+│   │   └── images/        # Image generation and management
+│   ├── studio/            # Main application UI
+│   │   ├── components/    # Studio-specific components (Gallery, Sidebar, Forms)
+│   │   └── hooks/         # Custom React hooks for studio logic
 │   ├── layout.tsx
-│   ├── page.tsx                    # Landing page
-│   └── globals.css
-└── lib/
-    ├── db/
-    │   ├── index.ts                # Drizzle client
-    │   └── schema.ts               # DB schema
-    ├── ai.ts                       # AI SDK + Bedrock clients
-    ├── models.ts                   # Model configurations
-    ├── s3.ts                       # S3 helpers
-    └── workos.ts                   # WorkOS + session helpers
+│   └── page.tsx           # Marketing landing page
+├── lib/
+│   ├── api/               # API client and wrappers
+│   ├── db/                # Drizzle schema and client
+│   ├── models/            # Multi-provider AI model handlers (Gemini, Bedrock, etc.)
+│   ├── s3.ts              # AWS S3 integration
+│   └── workos.ts          # WorkOS configuration
+└── ...
 ```
 
 ## License
