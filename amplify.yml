@@ -25,7 +25,14 @@ frontend:
           echo "S3_BUCKET_NAME=$S3_BUCKET_NAME" >> .env.production
           echo "AZURE_OPENAI_API_KEY=$AZURE_OPENAI_API_KEY" >> .env.production
           echo "AZURE_OPENAI_ENDPOINT=$AZURE_OPENAI_ENDPOINT" >> .env.production
+          echo "AZURE_OPENAI_ENDPOINT=$AZURE_OPENAI_ENDPOINT" >> .env.production
           echo "NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL" >> .env.production
+          echo "GOOGLE_SERVICE_ACCOUNT_KEY=$GOOGLE_SERVICE_ACCOUNT_KEY" >> .env.production
+          echo "GOOGLE_CLIENT_EMAIL=$GOOGLE_CLIENT_EMAIL" >> .env.production
+          echo "GOOGLE_PRIVATE_KEY=$GOOGLE_PRIVATE_KEY" >> .env.production
+          echo "GOOGLE_PROJECT_ID=$GOOGLE_PROJECT_ID" >> .env.production
+          echo "GOOGLE_CLOUD_PROJECT=chatapp-by-amanm" >> .env.production
+          echo "GOOGLE_CLOUD_LOCATION=global" >> .env.production
         - bun run build
   artifacts:
     baseDirectory: .next
