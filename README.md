@@ -1,4 +1,4 @@
-# Image Studio 4 (Sunsetted)
+# Image Studio 4 (Sunsetted - Move to image-studio-final)
 
 An AI-powered image generation and organization studio built with Next.js, Google Vertex AI (Gemini), WorkOS AuthKit, and AWS.
 
